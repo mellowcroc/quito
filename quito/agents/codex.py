@@ -62,10 +62,11 @@ Return ONLY the JSON array, no markdown fences. If no issues found, return [].""
 
     def _call_cli(self, prompt: str) -> str:
         result = subprocess.run(
-            ["codex", "--approval-mode", "suggest", "--quiet", "-p", prompt],
+            ["codex", "--approval-mode", "suggest", "--quiet"],
+            input=prompt,
             capture_output=True,
             text=True,
-            timeout=300,
+            timeout=600,
         )
         return result.stdout.strip() if result.returncode == 0 else ""
 

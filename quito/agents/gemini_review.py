@@ -74,10 +74,11 @@ Return ONLY the JSON array, no markdown fences. If no issues found, return [].""
 
     def _call_cli(self, prompt: str) -> str:
         result = subprocess.run(
-            ["gemini", "-p", prompt],
+            ["gemini"],
+            input=prompt,
             capture_output=True,
             text=True,
-            timeout=300,
+            timeout=600,
         )
         if result.returncode != 0:
             raise RuntimeError(f"Gemini CLI failed: {result.stderr}")

@@ -52,7 +52,7 @@ def _first_paragraph(raw: str) -> str:
 
 def _extract_section(raw: str, heading_keyword: str) -> str | None:
     pattern = re.compile(
-        rf"^#{1, 3}\s+.*{re.escape(heading_keyword)}.*$",
+        rf"^#{{1,3}}\s+.*{re.escape(heading_keyword)}.*$",
         re.IGNORECASE | re.MULTILINE,
     )
     match = pattern.search(raw)

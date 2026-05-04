@@ -141,7 +141,8 @@ Return ONLY the markdown spec, no code fences or preamble.
 
     if use_cli:
         result = subprocess.run(
-            ["claude", "-p", prompt, "--output-format", "text"],
+            ["claude", "--output-format", "text"],
+            input=prompt,
             capture_output=True,
             text=True,
             timeout=600,

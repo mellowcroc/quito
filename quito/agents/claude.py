@@ -138,10 +138,11 @@ Return ONLY the JSON, no markdown fences."""
 
     def _call_cli(self, prompt: str) -> str:
         result = subprocess.run(
-            ["claude", "-p", prompt, "--output-format", "text"],
+            ["claude", "--output-format", "text"],
+            input=prompt,
             capture_output=True,
             text=True,
-            timeout=300,
+            timeout=600,
         )
         if result.returncode != 0:
             raise RuntimeError(f"Claude CLI failed: {result.stderr}")

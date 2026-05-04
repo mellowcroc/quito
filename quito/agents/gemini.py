@@ -130,10 +130,11 @@ Return ONLY the JSON array. If no issues, return []."""
         for p in file_paths:
             file_args.extend(["-f", str(p)])
         result = subprocess.run(
-            ["gemini", "-p", prompt] + file_args,
+            ["gemini"] + file_args,
+            input=prompt,
             capture_output=True,
             text=True,
-            timeout=300,
+            timeout=600,
         )
         if result.returncode != 0:
             raise RuntimeError(f"Gemini CLI failed: {result.stderr}")
