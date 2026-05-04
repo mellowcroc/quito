@@ -1,27 +1,38 @@
 from __future__ import annotations
 
-import json
 import subprocess
 from pathlib import Path
 
 from ..models import Spec
 from ..stages.spec_parse import parse_spec
 
-
 SCAN_PATTERNS = [
-    "README.md", "README.rst", "README.txt",
-    "ARCHITECTURE.md", "DESIGN.md",
-    "package.json", "pyproject.toml", "Cargo.toml", "go.mod",
-    "docker-compose.yml", "Dockerfile",
+    "README.md",
+    "README.rst",
+    "README.txt",
+    "ARCHITECTURE.md",
+    "DESIGN.md",
+    "package.json",
+    "pyproject.toml",
+    "Cargo.toml",
+    "go.mod",
+    "docker-compose.yml",
+    "Dockerfile",
 ]
 
 SOURCE_EXTENSIONS = {
-    ".ts", ".tsx", ".js", ".jsx",
+    ".ts",
+    ".tsx",
+    ".js",
+    ".jsx",
     ".py",
     ".rs",
     ".go",
-    ".vue", ".svelte",
-    ".html", ".css", ".scss",
+    ".vue",
+    ".svelte",
+    ".html",
+    ".css",
+    ".scss",
 }
 
 MAX_FILE_SIZE = 50_000
@@ -140,6 +151,7 @@ Return ONLY the markdown spec, no code fences or preamble.
         spec_md = result.stdout
     else:
         import anthropic
+
         client = anthropic.Anthropic()
         response = client.messages.create(
             model=model,
@@ -157,9 +169,20 @@ Return ONLY the markdown spec, no code fences or preamble.
 def _should_skip(p: Path) -> bool:
     parts = p.parts
     skip_dirs = {
-        "node_modules", ".git", ".next", "__pycache__", "dist",
-        "build", ".cache", "target", "vendor", ".venv", "venv",
-        ".turbo", ".vercel", "coverage",
+        "node_modules",
+        ".git",
+        ".next",
+        "__pycache__",
+        "dist",
+        "build",
+        ".cache",
+        "target",
+        "vendor",
+        ".venv",
+        "venv",
+        ".turbo",
+        ".vercel",
+        "coverage",
     }
     return bool(skip_dirs & set(parts))
 

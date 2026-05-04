@@ -30,10 +30,10 @@ Title: {spec.title}
 Description: {spec.description}
 
 Requirements:
-{chr(10).join(f'- {r}' for r in spec.requirements)}
+{chr(10).join(f"- {r}" for r in spec.requirements)}
 
 Acceptance Criteria:
-{chr(10).join(f'- {c}' for c in spec.acceptance_criteria)}
+{chr(10).join(f"- {c}" for c in spec.acceptance_criteria)}
 
 ## Implementation Plan
 {plan}
@@ -71,6 +71,7 @@ Return ONLY the JSON array, no markdown fences. If no issues found, return [].""
 
     def _call_api(self, prompt: str) -> str:
         import openai
+
         client = openai.OpenAI()
         response = client.responses.create(
             model="o3",
@@ -125,11 +126,13 @@ def _parse_review(output: str) -> list[ReviewComment]:
             severity = Severity(item.get("severity", "medium").lower())
         except ValueError:
             severity = Severity.MEDIUM
-        comments.append(ReviewComment(
-            file=item.get("file", "unknown"),
-            line=item.get("line"),
-            severity=severity,
-            comment=item.get("comment", ""),
-            suggested_fix=item.get("suggested_fix", ""),
-        ))
+        comments.append(
+            ReviewComment(
+                file=item.get("file", "unknown"),
+                line=item.get("line"),
+                severity=severity,
+                comment=item.get("comment", ""),
+                suggested_fix=item.get("suggested_fix", ""),
+            )
+        )
     return comments

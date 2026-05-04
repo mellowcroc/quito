@@ -6,7 +6,7 @@ from pathlib import Path
 from pydantic import BaseModel, Field
 
 
-class Severity(str, enum.Enum):
+class Severity(enum.StrEnum):
     CRITICAL = "critical"
     HIGH = "high"
     MEDIUM = "medium"
@@ -53,7 +53,7 @@ class VisualFinding(BaseModel):
     suggestion: str = ""
 
 
-class GateDecision(str, enum.Enum):
+class GateDecision(enum.StrEnum):
     LOOP_BACK = "loop_back"
     PROCEED_TO_BUGBASH = "proceed_to_bugbash"
     HALT = "halt"

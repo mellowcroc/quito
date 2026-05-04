@@ -15,10 +15,7 @@ def evaluate_gate(
     review_comments: list[ReviewComment],
     visual_findings: list[VisualFinding],
 ) -> GateResult:
-    all_severities = (
-        [c.severity for c in review_comments]
-        + [f.severity for f in visual_findings]
-    )
+    all_severities = [c.severity for c in review_comments] + [f.severity for f in visual_findings]
 
     critical = sum(1 for s in all_severities if s == Severity.CRITICAL)
     high = sum(1 for s in all_severities if s == Severity.HIGH)

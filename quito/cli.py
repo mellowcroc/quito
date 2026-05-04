@@ -10,8 +10,16 @@ from .pipeline import run_pipeline
 
 @click.command()
 @click.argument("spec", type=click.Path(exists=True, path_type=Path), required=False, default=None)
-@click.option("--project-dir", "-d", type=click.Path(exists=True, path_type=Path), default=None, help="Project directory to generate spec from (used when no spec file given)")
-@click.option("--output", "-o", type=click.Path(path_type=Path), default="artifacts", help="Output directory for artifacts")
+@click.option(
+    "--project-dir",
+    "-d",
+    type=click.Path(exists=True, path_type=Path),
+    default=None,
+    help="Project directory to generate spec from (used when no spec file given)",
+)
+@click.option(
+    "--output", "-o", type=click.Path(path_type=Path), default="artifacts", help="Output directory for artifacts"
+)
 @click.option("--max-iterations", "-n", type=int, default=5, help="Max quality loop iterations")
 @click.option("--bugbash-agents", type=int, default=100, help="Number of bugbash agents")
 @click.option("--bugbash-concurrency", type=int, default=20, help="Max concurrent bugbash browsers")
@@ -19,7 +27,15 @@ from .pipeline import run_pipeline
 @click.option("--app-url", type=str, default="http://localhost:3000", help="URL of the running app")
 @click.option("--claude-model", type=str, default="claude-opus-4-7", help="Claude model to use")
 @click.option("--gemini-model", type=str, default="gemini-2.5-flash", help="Gemini model to use")
-@click.option("--reviewer", "-r", "reviewers", type=click.Choice(["codex", "claude", "gemini"]), multiple=True, default=["codex"], help="Reviewer(s) to use. Repeat for multi-review: -r codex -r claude")
+@click.option(
+    "--reviewer",
+    "-r",
+    "reviewers",
+    type=click.Choice(["codex", "claude", "gemini"]),
+    multiple=True,
+    default=["codex"],
+    help="Reviewer(s) to use. Repeat for multi-review: -r codex -r claude",
+)
 @click.option("--use-cli/--use-api", default=True, help="Use CLI tools (Max/Pro subs) or APIs (usage-based billing)")
 def main(
     spec: Path | None,

@@ -15,7 +15,7 @@ from .agents.gemini import GeminiVisualQA
 from .agents.gemini_review import GeminiReview
 from .agents.multi_review import MultiReview
 from .browser.capture import run_capture
-from .models import GateDecision, IterationResult, RunConfig, Severity
+from .models import GateDecision, IterationResult, RunConfig
 from .stages.base import CodegenStage, PipelineContext, ReviewStage, Stage, VisualQAStage
 from .stages.bugbash import deduplicate_findings, generate_personas, run_bugbash
 from .stages.gate import evaluate_gate
@@ -93,7 +93,9 @@ def run_pipeline(
     reviewer: ReviewStage = s["review"]
     visual_qa: VisualQAStage = s["visual_qa"]
 
-    console.print(f"Stages: codegen=[bold]{codegen.name}[/bold] review=[bold]{reviewer.name}[/bold] visual_qa=[bold]{visual_qa.name}[/bold]")
+    console.print(
+        f"Stages: codegen=[bold]{codegen.name}[/bold] review=[bold]{reviewer.name}[/bold] visual_qa=[bold]{visual_qa.name}[/bold]"
+    )
 
     dev_server = None
     code: dict[str, str] = {}
@@ -212,9 +214,15 @@ def run_pipeline(
 
             if config.app_command:
                 console.print(f"Running bugbash (concurrency: {config.bugbash_concurrency})...")
-                findings = asyncio.run(run_bugbash(
-                    personas, spec, config.app_url, store, config.bugbash_concurrency,
-                ))
+                findings = asyncio.run(
+                    run_bugbash(
+                        personas,
+                        spec,
+                        config.app_url,
+                        store,
+                        config.bugbash_concurrency,
+                    )
+                )
                 console.print(f"  {len(findings)} raw findings")
 
                 if findings:
@@ -295,11 +303,12 @@ def _generate_summary(store: RunStore, final_iteration: int) -> str:
 
     findings = store.load_bugbash_findings()
     if findings:
-        lines.append(f"\n## Bugbash")
+        lines.append("\n## Bugbash")
         lines.append(f"- Raw findings: {len(findings)}")
         clustered_path = store.bugbash_dir() / "clustered.json"
         if clustered_path.exists():
             import json
+
             clustered = json.loads(clustered_path.read_text())
             lines.append(f"- Unique bugs: {len(clustered)}")
 

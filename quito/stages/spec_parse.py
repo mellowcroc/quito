@@ -52,7 +52,7 @@ def _first_paragraph(raw: str) -> str:
 
 def _extract_section(raw: str, heading_keyword: str) -> str | None:
     pattern = re.compile(
-        rf"^#{1,3}\s+.*{re.escape(heading_keyword)}.*$",
+        rf"^#{1, 3}\s+.*{re.escape(heading_keyword)}.*$",
         re.IGNORECASE | re.MULTILINE,
     )
     match = pattern.search(raw)
@@ -105,13 +105,15 @@ def _extract_user_flows(raw: str) -> list[UserFlow]:
             step_text = step_match.group(1).strip()
             step_id = f"step-{len(current_steps) + 1}"
             action, selector, value = _parse_step_text(step_text)
-            current_steps.append(FlowStep(
-                id=step_id,
-                action=action,
-                selector=selector,
-                value=value,
-                description=step_text,
-            ))
+            current_steps.append(
+                FlowStep(
+                    id=step_id,
+                    action=action,
+                    selector=selector,
+                    value=value,
+                    description=step_text,
+                )
+            )
 
     if current_flow_name and current_steps:
         flows.append(UserFlow(name=current_flow_name, steps=current_steps))

@@ -45,10 +45,10 @@ Title: {spec.title}
 Description: {spec.description}
 
 Requirements:
-{chr(10).join(f'- {r}' for r in spec.requirements)}
+{chr(10).join(f"- {r}" for r in spec.requirements)}
 
 Acceptance Criteria:
-{chr(10).join(f'- {c}' for c in spec.acceptance_criteria)}
+{chr(10).join(f"- {c}" for c in spec.acceptance_criteria)}
 
 UI Description:
 {spec.ui_description}

@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Get staged .py files
+STAGED=$(git diff --cached --name-only --diff-filter=ACM -- '*.py')
+
+if [ -z "$STAGED" ]; then
+    exit 0
+fi
+
+echo "pre-commit: checking staged Python files..."
+
+# 1. Syntax check
+echo "  syntax check..."
+for f in $STAGED; do
+    if [ -f "$f" ]; then
+        python3 -m py_compile "$f" || {
+            echo "FAIL: $f has syntax errors"
+            exit 1
+        }
+    fi
+done
+
+# 2. Ruff lint
+echo "  ruff check..."
+if command -v ruff &>/dev/null; then
+    ruff check $STAGED || {
+        echo "FAIL: ruff found lint errors (run 'ruff check --fix' to auto-fix)"
+        exit 1
+    }
+
+    # 3. Ruff format check
+    echo "  ruff format..."
+    ruff format --check $STAGED || {
+        echo "FAIL: formatting issues (run 'ruff format' to fix)"
+        exit 1
+    }
+else
+    echo "  ruff not installed, skipping (pip install ruff)"
+fi
+
+echo "pre-commit: all checks passed"

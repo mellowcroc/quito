@@ -16,6 +16,7 @@ class GeminiVisualQA(VisualQAStage):
         self.use_cli = use_cli
         if not use_cli:
             from google import genai
+
             self.client = genai.Client()
 
     def review_screenshots(
@@ -34,7 +35,7 @@ Description: {spec.description}
 UI Description: {spec.ui_description}
 
 Acceptance Criteria:
-{chr(10).join(f'- {c}' for c in spec.acceptance_criteria)}
+{chr(10).join(f"- {c}" for c in spec.acceptance_criteria)}
 
 The following screenshots show the current implementation in order of the user flow.
 Identify every UI/UX issue: layout problems, missing elements, wrong text, accessibility issues, responsive issues, visual bugs.
@@ -95,7 +96,6 @@ Return ONLY the JSON array. If no issues, return []."""
         return _parse_visual_findings(response_text, source="video")
 
     def _call_api_screenshots(self, prompt: str, paths: list[Path]) -> str:
-        from google import genai
         uploads = []
         for p in paths:
             uploads.append(self.client.files.upload(file=p))
@@ -183,11 +183,13 @@ def _parse_visual_findings(text: str, source: str) -> list[VisualFinding]:
             severity = Severity(item.get("severity", "medium").lower())
         except ValueError:
             severity = Severity.MEDIUM
-        findings.append(VisualFinding(
-            screenshot=item.get("screenshot", ""),
-            source=source,
-            issue=item.get("issue", ""),
-            severity=severity,
-            suggestion=item.get("suggestion", ""),
-        ))
+        findings.append(
+            VisualFinding(
+                screenshot=item.get("screenshot", ""),
+                source=source,
+                issue=item.get("issue", ""),
+                severity=severity,
+                suggestion=item.get("suggestion", ""),
+            )
+        )
     return findings

@@ -16,6 +16,35 @@ dependencies = [
 [project.scripts]
 quito = "quito.cli:main"
 
+[project.optional-dependencies]
+dev = ["ruff>=0.11.0"]
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
+
+[tool.ruff]
+target-version = "py312"
+line-length = 120
+
+[tool.ruff.lint]
+select = [
+    "E",    # pycodestyle errors
+    "W",    # pycodestyle warnings
+    "F",    # pyflakes (undefined names, unused imports, etc.)
+    "I",    # isort
+    "S",    # bandit security checks
+    "B",    # bugbear (common gotchas)
+    "UP",   # pyupgrade (use modern Python syntax)
+]
+ignore = [
+    "S603",  # subprocess call with shell=True — intentional for CLI wrappers
+    "S607",  # partial path for subprocess — we trust claude/codex/gemini are on PATH
+    "S110",  # try-except-pass — intentional in browser automation (actions may fail)
+    "S112",  # try-except-continue — intentional in codebase scanning (files may be unreadable)
+    "E501",  # line length in prompt strings and CLI decorators
+]
+
+[tool.ruff.lint.per-file-ignores]
+"quito/agents/*" = ["S602"]  # shell=True in subprocess — intentional
+"quito/pipeline.py" = ["S602"]

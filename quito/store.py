@@ -154,10 +154,7 @@ class RunStore:
         d = self.bugbash_dir() / "personas"
         if not d.exists():
             return []
-        return [
-            BugbashPersona.model_validate_json(f.read_text())
-            for f in sorted(d.glob("*.json"))
-        ]
+        return [BugbashPersona.model_validate_json(f.read_text()) for f in sorted(d.glob("*.json"))]
 
     def save_bugbash_finding(self, finding: BugbashFinding) -> Path:
         d = self.bugbash_dir() / "findings"
@@ -170,10 +167,7 @@ class RunStore:
         d = self.bugbash_dir() / "findings"
         if not d.exists():
             return []
-        return [
-            BugbashFinding.model_validate_json(f.read_text())
-            for f in sorted(d.glob("*.json"))
-        ]
+        return [BugbashFinding.model_validate_json(f.read_text()) for f in sorted(d.glob("*.json"))]
 
     def save_bugbash_report(self, report: str) -> Path:
         p = self.bugbash_dir() / "report.md"

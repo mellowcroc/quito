@@ -36,10 +36,20 @@ class CodegenStage(Stage):
     def name(self) -> str: ...
 
     @abstractmethod
-    def generate(self, spec: Spec, feedback: list[ReviewComment] | None, existing_code: dict[str, str] | None) -> tuple[str, dict[str, str]]: ...
+    def generate(
+        self,
+        spec: Spec,
+        feedback: list[ReviewComment] | None,
+        existing_code: dict[str, str] | None,
+    ) -> tuple[str, dict[str, str]]: ...
 
     @abstractmethod
-    def apply_review(self, code: dict[str, str], comments: list[ReviewComment], spec: Spec) -> tuple[dict[str, str], list[dict]]: ...
+    def apply_review(
+        self,
+        code: dict[str, str],
+        comments: list[ReviewComment],
+        spec: Spec,
+    ) -> tuple[dict[str, str], list[dict]]: ...
 
     def run(self, ctx: PipelineContext) -> PipelineContext:
         feedback = ctx.feedback if ctx.iteration > 1 else None

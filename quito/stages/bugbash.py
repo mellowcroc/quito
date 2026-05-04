@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import asyncio
 import json
-from pathlib import Path
 
 import anthropic
 from playwright.async_api import async_playwright
@@ -35,7 +34,7 @@ Title: {spec.title}
 Description: {spec.description}
 
 Requirements:
-{chr(10).join(f'- {r}' for r in spec.requirements)}
+{chr(10).join(f"- {r}" for r in spec.requirements)}
 
 {distribution}
 
@@ -161,13 +160,15 @@ If done testing, return {{"action": "done"}}"""
                     severity = Severity(bug.get("severity", "medium").lower())
                 except ValueError:
                     severity = Severity.MEDIUM
-                findings.append(BugbashFinding(
-                    persona_id=persona.id,
-                    issue=bug.get("issue", ""),
-                    severity=severity,
-                    reproduction_steps=bug.get("reproduction_steps", []),
-                    category=bug.get("category", persona.angle),
-                ))
+                findings.append(
+                    BugbashFinding(
+                        persona_id=persona.id,
+                        issue=bug.get("issue", ""),
+                        severity=severity,
+                        reproduction_steps=bug.get("reproduction_steps", []),
+                        category=bug.get("category", persona.angle),
+                    )
+                )
                 continue
 
             try:
@@ -302,12 +303,14 @@ def _parse_personas(text: str) -> list[BugbashPersona]:
     personas = []
     for item in items:
         viewport = item.get("viewport", {"width": 1280, "height": 720})
-        personas.append(BugbashPersona(
-            id=item.get("id", f"persona-{len(personas) + 1}"),
-            angle=item.get("angle", "general"),
-            strategy=item.get("strategy", ""),
-            viewport=viewport,
-        ))
+        personas.append(
+            BugbashPersona(
+                id=item.get("id", f"persona-{len(personas) + 1}"),
+                angle=item.get("angle", "general"),
+                strategy=item.get("strategy", ""),
+                viewport=viewport,
+            )
+        )
     return personas
 
 
