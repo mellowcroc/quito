@@ -9,7 +9,8 @@ from .pipeline import run_pipeline
 
 
 @click.command()
-@click.argument("spec", type=click.Path(exists=True, path_type=Path))
+@click.argument("spec", type=click.Path(exists=True, path_type=Path), required=False, default=None)
+@click.option("--project-dir", "-d", type=click.Path(exists=True, path_type=Path), default=None, help="Project directory to generate spec from (used when no spec file given)")
 @click.option("--output", "-o", type=click.Path(path_type=Path), default="artifacts", help="Output directory for artifacts")
 @click.option("--max-iterations", "-n", type=int, default=5, help="Max quality loop iterations")
 @click.option("--bugbash-agents", type=int, default=100, help="Number of bugbash agents")
@@ -21,7 +22,8 @@ from .pipeline import run_pipeline
 @click.option("--reviewer", "-r", "reviewers", type=click.Choice(["codex", "claude", "gemini"]), multiple=True, default=["codex"], help="Reviewer(s) to use. Repeat for multi-review: -r codex -r claude")
 @click.option("--use-cli/--use-api", default=True, help="Use CLI tools (Max/Pro subs) or APIs (usage-based billing)")
 def main(
-    spec: Path,
+    spec: Path | None,
+    project_dir: Path | None,
     output: Path,
     max_iterations: int,
     bugbash_agents: int,
@@ -33,9 +35,23 @@ def main(
     reviewers: tuple[str, ...],
     use_cli: bool,
 ):
-    """Run the Quito quality pipeline on a spec file."""
+    """Run the Quito quality pipeline.
+
+    Pass a SPEC file to use an existing spec, or use --project-dir (-d) to
+    auto-generate a spec from an existing codebase.
+
+    \b
+    Examples:
+      quito spec.md                          # run with explicit spec
+      quito -d ~/my-project                  # generate spec from codebase
+      quito -d . -r codex -r claude          # multi-review on current dir
+    """
+    if not spec and not project_dir:
+        project_dir = Path.cwd()
+
     config = RunConfig(
         spec_path=spec,
+        project_dir=project_dir,
         output_dir=output,
         max_iterations=max_iterations,
         bugbash_agents=bugbash_agents,

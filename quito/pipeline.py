@@ -19,6 +19,7 @@ from .models import GateDecision, IterationResult, RunConfig, Severity
 from .stages.base import CodegenStage, PipelineContext, ReviewStage, Stage, VisualQAStage
 from .stages.bugbash import deduplicate_findings, generate_personas, run_bugbash
 from .stages.gate import evaluate_gate
+from .stages.spec_gen import generate_spec
 from .stages.spec_parse import parse_spec
 from .store import RunStore
 
@@ -65,8 +66,21 @@ def run_pipeline(
 ) -> Path:
     console.print(Panel("Quito Pipeline", style="bold cyan"))
 
-    spec = parse_spec(config.spec_path)
-    console.print(f"Spec: [bold]{spec.title}[/bold]")
+    if config.spec_path:
+        spec = parse_spec(config.spec_path)
+        console.print(f"Spec: [bold]{spec.title}[/bold] (from file)")
+    elif config.project_dir:
+        console.print(f"[cyan]Generating spec from codebase:[/cyan] {config.project_dir}")
+        spec = generate_spec(
+            config.project_dir,
+            model=config.claude_model,
+            use_cli=config.use_cli,
+        )
+        console.print(f"Spec: [bold]{spec.title}[/bold] (generated)")
+        console.print(f"  Saved to {config.project_dir / '.quito-spec.md'}")
+    else:
+        raise ValueError("Either spec_path or project_dir must be provided")
+
     console.print(f"  {len(spec.requirements)} requirements, {len(spec.acceptance_criteria)} acceptance criteria")
 
     output_dir = config.output_dir or Path("artifacts")

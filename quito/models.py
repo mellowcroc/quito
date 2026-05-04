@@ -92,7 +92,8 @@ class IterationResult(BaseModel):
 
 
 class RunConfig(BaseModel):
-    spec_path: Path
+    spec_path: Path | None = None
+    project_dir: Path | None = None
     output_dir: Path | None = None
     max_iterations: int = 5
     bugbash_agents: int = 100
