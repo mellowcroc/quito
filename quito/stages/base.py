@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from pathlib import Path
 from typing import Any
 
 from ..models import ReviewComment, Spec, VisualFinding
@@ -83,4 +84,47 @@ class VisualQAStage(Stage):
     def review_video(self, video_path, spec: Spec) -> list[VisualFinding]: ...
 
     def run(self, ctx: PipelineContext) -> PipelineContext:
+        return ctx
+
+
+class FixStage(Stage):
+    """Applies fixes to actual project files based on review comments."""
+
+    @property
+    @abstractmethod
+    def name(self) -> str: ...
+
+    @abstractmethod
+    def fix(
+        self,
+        project_dir: Path,
+        comments: list[ReviewComment],
+        spec: Spec,
+    ) -> list[dict]:
+        """Apply fixes to files in project_dir. Returns a list of actions taken."""
+        ...
+
+    def run(self, ctx: PipelineContext) -> PipelineContext:
+        project_dir = Path(ctx.config.project_dir)
+        actions = self.fix(project_dir, ctx.review_comments, ctx.spec)
+        ctx.extra["fix_actions"] = actions
+        return ctx
+
+
+class VerifyStage(Stage):
+    """Runs project verification commands (tests, typecheck, lint)."""
+
+    @property
+    @abstractmethod
+    def name(self) -> str: ...
+
+    @abstractmethod
+    def verify(self, project_dir: Path) -> list[dict]:
+        """Run verification. Returns list of {command, passed, output}."""
+        ...
+
+    def run(self, ctx: PipelineContext) -> PipelineContext:
+        project_dir = Path(ctx.config.project_dir)
+        results = self.verify(project_dir)
+        ctx.extra["verify_results"] = results
         return ctx

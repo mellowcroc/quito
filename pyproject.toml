@@ -48,3 +48,5 @@ ignore = [
 [tool.ruff.lint.per-file-ignores]
 "quito/agents/*" = ["S602"]  # shell=True in subprocess — intentional
 "quito/pipeline.py" = ["S602"]
+"quito/stages/verify.py" = ["S602"]
+"quito/review_pipeline.py" = ["S602"]

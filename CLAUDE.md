@@ -13,9 +13,13 @@ git config core.hooksPath .githooks
 ## Run
 
 ```bash
-quito spec.md                              # with explicit spec
-quito -d ~/some-project                    # generate spec from codebase
-quito -d . -r codex -r claude -r gemini    # multi-review
+# Greenfield: generate code from spec
+quito spec.md
+quito -d ~/some-project
+
+# Review & fix existing code in-place (creates a git branch)
+quito --fix -d ~/my-project -r claude
+quito --fix -d . -r claude --verify 'bun test' --verify 'bun typecheck'
 ```
 
 ## Project Structure
@@ -24,7 +28,8 @@ quito -d . -r codex -r claude -r gemini    # multi-review
 - `quito/models.py` — all Pydantic data models (Spec, RunConfig, ReviewComment, etc.)
 - `quito/store.py` — artifact store, manages per-run directories and file I/O
 - `quito/cli.py` — Click CLI entry point
-- `quito/stages/base.py` — plugin interface: Stage, CodegenStage, ReviewStage, VisualQAStage
+- `quito/review_pipeline.py` — review & fix pipeline for existing projects (--fix mode)
+- `quito/stages/base.py` — plugin interface: Stage, CodegenStage, ReviewStage, VisualQAStage, FixStage, VerifyStage
 - `quito/stages/spec_parse.py` — markdown spec parser
 - `quito/stages/spec_gen.py` — generates a spec from an existing codebase via Claude
 - `quito/stages/gate.py` — pass/fail/loop decision logic
@@ -35,6 +40,8 @@ quito -d . -r codex -r claude -r gemini    # multi-review
 - `quito/agents/claude_review.py` — Claude as reviewer
 - `quito/agents/gemini_review.py` — Gemini as reviewer
 - `quito/agents/multi_review.py` — composite that merges findings from multiple reviewers
+- `quito/agents/claude_fixer.py` — applies fixes to actual project files per-file
+- `quito/stages/verify.py` — runs project commands (tests, typecheck) after fixes
 - `quito/browser/capture.py` — Playwright screenshot + video capture
 
 ## Git

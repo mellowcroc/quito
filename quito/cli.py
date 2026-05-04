@@ -6,6 +6,7 @@ import click
 
 from .models import RunConfig
 from .pipeline import run_pipeline
+from .review_pipeline import run_review_pipeline
 
 
 @click.command()
@@ -16,6 +17,20 @@ from .pipeline import run_pipeline
     type=click.Path(exists=True, path_type=Path),
     default=None,
     help="Project directory to generate spec from (used when no spec file given)",
+)
+@click.option(
+    "--fix",
+    "fix_mode",
+    is_flag=True,
+    default=False,
+    help="Review and fix existing code in-place (on a git branch)",
+)
+@click.option(
+    "--verify",
+    "verify_commands",
+    type=str,
+    multiple=True,
+    help="Commands to run after fixes to verify correctness. Repeat for multiple: --verify 'bun test' --verify 'bun typecheck'",
 )
 @click.option(
     "--output", "-o", type=click.Path(path_type=Path), default="artifacts", help="Output directory for artifacts"
@@ -40,6 +55,8 @@ from .pipeline import run_pipeline
 def main(
     spec: Path | None,
     project_dir: Path | None,
+    fix_mode: bool,
+    verify_commands: tuple[str, ...],
     output: Path,
     max_iterations: int,
     bugbash_agents: int,
@@ -53,14 +70,17 @@ def main(
 ):
     """Run the Quito quality pipeline.
 
-    Pass a SPEC file to use an existing spec, or use --project-dir (-d) to
-    auto-generate a spec from an existing codebase.
+    \b
+    Two modes:
+      Default:  Spec -> generate code -> review -> iterate (greenfield)
+      --fix:    Review existing code -> apply fixes in-place -> verify (existing projects)
 
     \b
     Examples:
-      quito spec.md                          # run with explicit spec
-      quito -d ~/my-project                  # generate spec from codebase
-      quito -d . -r codex -r claude          # multi-review on current dir
+      quito spec.md                                  # greenfield from spec
+      quito -d ~/my-project                          # generate spec, then greenfield
+      quito --fix -d ~/my-project -r claude          # review & fix existing code
+      quito --fix -d . -r claude --verify 'bun test' # fix with verification
     """
     if not spec and not project_dir:
         project_dir = Path.cwd()
@@ -80,7 +100,13 @@ def main(
         use_cli=use_cli,
     )
 
-    run_pipeline(config)
+    if fix_mode:
+        run_review_pipeline(
+            config,
+            verify_commands=list(verify_commands) if verify_commands else None,
+        )
+    else:
+        run_pipeline(config)
 
 
 if __name__ == "__main__":
