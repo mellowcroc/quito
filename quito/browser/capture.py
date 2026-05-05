@@ -39,8 +39,11 @@ async def capture_screenshots_and_video(
             for flow in spec.user_flows:
                 for step in flow.steps:
                     idx += 1
-                    await _execute_step(page, step, app_url)
-                    await page.wait_for_load_state("networkidle", timeout=10000)
+                    try:
+                        await _execute_step(page, step, app_url)
+                        await page.wait_for_load_state("networkidle", timeout=10000)
+                    except Exception:
+                        pass
                     path = screenshots_dir / f"{idx:03d}_{step.id}.png"
                     await page.screenshot(path=str(path))
                     screenshot_paths.append(path)
@@ -51,13 +54,19 @@ async def capture_screenshots_and_video(
                     continue
                 if href.startswith("/") or href.startswith(app_url):
                     idx += 1
-                    await link.click()
-                    await page.wait_for_load_state("networkidle", timeout=10000)
+                    try:
+                        await link.click()
+                        await page.wait_for_load_state("networkidle", timeout=10000)
+                    except Exception:
+                        pass
                     path = screenshots_dir / f"{idx:03d}_page.png"
                     await page.screenshot(path=str(path))
                     screenshot_paths.append(path)
-                    await page.go_back()
-                    await page.wait_for_load_state("networkidle", timeout=10000)
+                    try:
+                        await page.go_back()
+                        await page.wait_for_load_state("networkidle", timeout=10000)
+                    except Exception:
+                        pass
                 if idx >= 10:
                     break
 
