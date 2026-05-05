@@ -2,21 +2,48 @@ from __future__ import annotations
 
 import asyncio
 import json
+import subprocess
 
-import anthropic
 from playwright.async_api import async_playwright
 
 from ..models import BugbashFinding, BugbashPersona, Severity, Spec
 from ..store import RunStore
 
 
+def _call_cli(prompt: str) -> str:
+    result = subprocess.run(
+        ["claude", "--output-format", "text"],
+        input=prompt,
+        capture_output=True,
+        text=True,
+        timeout=600,
+    )
+    if result.returncode != 0:
+        raise RuntimeError(f"Claude CLI failed: {result.stderr}")
+    return result.stdout
+
+
+async def _call_cli_async(prompt: str) -> str:
+    proc = await asyncio.create_subprocess_exec(
+        "claude",
+        "--output-format",
+        "text",
+        stdin=asyncio.subprocess.PIPE,
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE,
+    )
+    stdout, stderr = await asyncio.wait_for(proc.communicate(prompt.encode()), timeout=600)
+    if proc.returncode != 0:
+        raise RuntimeError(f"Claude CLI failed: {stderr.decode()}")
+    return stdout.decode()
+
+
 def generate_personas(
     spec: Spec,
     count: int = 100,
     model: str = "claude-sonnet-4-6",
+    use_cli: bool = True,
 ) -> list[BugbashPersona]:
-    client = anthropic.Anthropic()
-
     distribution = f"""Distribution across {count} personas:
 - {int(count * 0.20)} security (XSS, injection, auth bypass, CSRF, path traversal)
 - {int(count * 0.15)} edge cases (empty inputs, unicode, max lengths, boundary values)
@@ -52,13 +79,20 @@ Return a JSON array:
 
 Return ONLY the JSON array."""
 
-    response = client.messages.create(
-        model=model,
-        max_tokens=16000,
-        messages=[{"role": "user", "content": prompt}],
-    )
+    if use_cli:
+        response_text = _call_cli(prompt)
+    else:
+        import anthropic
 
-    return _parse_personas(response.content[0].text)
+        client = anthropic.Anthropic()
+        response = client.messages.create(
+            model=model,
+            max_tokens=16000,
+            messages=[{"role": "user", "content": prompt}],
+        )
+        response_text = response.content[0].text
+
+    return _parse_personas(response_text)
 
 
 async def run_bugbash(
@@ -68,13 +102,14 @@ async def run_bugbash(
     store: RunStore,
     concurrency: int = 20,
     model: str = "claude-sonnet-4-6",
+    use_cli: bool = True,
 ) -> list[BugbashFinding]:
     sem = asyncio.Semaphore(concurrency)
     all_findings: list[BugbashFinding] = []
 
     async def run_agent(persona: BugbashPersona):
         async with sem:
-            findings = await _bugbash_agent_session(persona, spec, app_url, model)
+            findings = await _bugbash_agent_session(persona, spec, app_url, model, use_cli=use_cli)
             for finding in findings:
                 store.save_bugbash_finding(finding)
                 all_findings.append(finding)
@@ -89,8 +124,8 @@ async def _bugbash_agent_session(
     app_url: str,
     model: str,
     max_actions: int = 50,
+    use_cli: bool = True,
 ) -> list[BugbashFinding]:
-    client = anthropic.AsyncAnthropic()
     findings: list[BugbashFinding] = []
 
     async with async_playwright() as p:
@@ -140,12 +175,19 @@ If you found a bug, include:
 If done testing, return {{"action": "done"}}"""
 
             try:
-                response = await client.messages.create(
-                    model=model,
-                    max_tokens=1000,
-                    messages=[{"role": "user", "content": prompt}],
-                )
-                action = _extract_json_from_text(response.content[0].text)
+                if use_cli:
+                    response_text = await _call_cli_async(prompt)
+                else:
+                    import anthropic
+
+                    client = anthropic.AsyncAnthropic()
+                    response = await client.messages.create(
+                        model=model,
+                        max_tokens=1000,
+                        messages=[{"role": "user", "content": prompt}],
+                    )
+                    response_text = response.content[0].text
+                action = _extract_json_from_text(response_text)
             except Exception:
                 break
 
@@ -217,11 +259,10 @@ async def _get_page_state(page) -> str:
 def deduplicate_findings(
     findings: list[BugbashFinding],
     model: str = "claude-opus-4-7",
+    use_cli: bool = True,
 ) -> tuple[list[dict], str]:
     if not findings:
         return [], "No findings to deduplicate."
-
-    client = anthropic.Anthropic()
 
     findings_text = json.dumps([f.model_dump() for f in findings], indent=2)
 
@@ -251,13 +292,20 @@ Return JSON:
 Findings:
 {findings_text}"""
 
-    response = client.messages.create(
-        model=model,
-        max_tokens=8000,
-        messages=[{"role": "user", "content": prompt}],
-    )
+    if use_cli:
+        response_text = _call_cli(prompt)
+    else:
+        import anthropic
 
-    parsed = _extract_json_from_text(response.content[0].text)
+        client = anthropic.Anthropic()
+        response = client.messages.create(
+            model=model,
+            max_tokens=8000,
+            messages=[{"role": "user", "content": prompt}],
+        )
+        response_text = response.content[0].text
+
+    parsed = _extract_json_from_text(response_text)
     clusters = parsed.get("clusters", [])
     summary = parsed.get("summary", "")
     return clusters, summary

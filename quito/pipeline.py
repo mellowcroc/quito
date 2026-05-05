@@ -208,7 +208,7 @@ def run_pipeline(
                 time.sleep(5)
 
             console.print("Generating personas...")
-            personas = generate_personas(spec, config.bugbash_agents)
+            personas = generate_personas(spec, config.bugbash_agents, use_cli=config.use_cli)
             store.save_personas(personas)
             console.print(f"  {len(personas)} personas ready")
 
@@ -221,13 +221,14 @@ def run_pipeline(
                         config.app_url,
                         store,
                         config.bugbash_concurrency,
+                        use_cli=config.use_cli,
                     )
                 )
                 console.print(f"  {len(findings)} raw findings")
 
                 if findings:
                     console.print("Deduplicating findings...")
-                    clustered, summary = deduplicate_findings(findings)
+                    clustered, summary = deduplicate_findings(findings, use_cli=config.use_cli)
                     store.save_clustered_findings(clustered)
                     store.save_bugbash_report(summary)
                     console.print(f"  {len(clustered)} unique bugs")
