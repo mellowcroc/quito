@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 from pathlib import Path
 
@@ -11,13 +12,19 @@ from ..stages.base import VisualQAStage
 class GeminiVisualQA(VisualQAStage):
     name = "gemini"
 
-    def __init__(self, model: str = "gemini-2.5-flash", use_cli: bool = False):
+    def __init__(self, model: str = "gemini-2.5-flash", use_cli: bool = False, project_dir: Path | None = None):
         self.model = model
         self.use_cli = use_cli
+        self.project_dir = project_dir
+        self._api_client = None
         if not use_cli:
             from google import genai
 
-            self.client = genai.Client()
+            self._api_client = genai.Client()
+        elif os.environ.get("GOOGLE_API_KEY"):
+            from google import genai
+
+            self._api_client = genai.Client()
 
     def review_screenshots(
         self,
@@ -52,10 +59,15 @@ Return a JSON array:
 
 Return ONLY the JSON array. If no issues, return []."""
 
+        paths = screenshot_paths
+        if self.use_cli and len(paths) > 10:
+            step = len(paths) // 10
+            paths = paths[::step][:10]
+
         if self.use_cli:
-            response_text = self._call_cli_with_files(prompt, screenshot_paths)
+            response_text = self._call_cli_with_files(prompt, paths)
         else:
-            response_text = self._call_api_screenshots(prompt, screenshot_paths)
+            response_text = self._call_api_screenshots(prompt, paths)
 
         return _parse_visual_findings(response_text, source="screenshot")
 
@@ -88,53 +100,63 @@ Return a JSON array:
 
 Return ONLY the JSON array. If no issues, return []."""
 
-        if self.use_cli:
-            response_text = self._call_cli_with_files(prompt, [video_path])
-        else:
+        if self._api_client:
             response_text = self._call_api_video(prompt, video_path)
+        else:
+            response_text = self._call_cli_with_files(prompt, [video_path])
 
         return _parse_visual_findings(response_text, source="video")
 
     def _call_api_screenshots(self, prompt: str, paths: list[Path]) -> str:
         uploads = []
         for p in paths:
-            uploads.append(self.client.files.upload(file=p))
+            uploads.append(self._api_client.files.upload(file=p))
 
-        response = self.client.models.generate_content(
+        response = self._api_client.models.generate_content(
             model=self.model,
             contents=[prompt] + uploads,
         )
 
         for uploaded in uploads:
             try:
-                self.client.files.delete(name=uploaded.name)
+                self._api_client.files.delete(name=uploaded.name)
             except Exception:
                 pass
 
         return response.text
 
     def _call_api_video(self, prompt: str, video_path: Path) -> str:
-        uploaded = self.client.files.upload(file=video_path)
-        response = self.client.models.generate_content(
+        uploaded = self._api_client.files.upload(file=video_path)
+        response = self._api_client.models.generate_content(
             model=self.model,
             contents=[prompt, uploaded],
         )
         try:
-            self.client.files.delete(name=uploaded.name)
+            self._api_client.files.delete(name=uploaded.name)
         except Exception:
             pass
         return response.text
 
     def _call_cli_with_files(self, prompt: str, file_paths: list[Path]) -> str:
-        file_args = []
+        files_list = "\n".join(str(p) for p in file_paths)
+        full_prompt = f"""{prompt}
+
+The files to analyze are at these absolute paths (read each one):
+{files_list}"""
+        include_dirs = set()
         for p in file_paths:
-            file_args.extend(["-f", str(p)])
+            include_dirs.add(str(p.parent))
+        cmd = ["gemini", "-p", "Follow the instructions from stdin.", "--yolo", "-o", "text"]
+        for d in include_dirs:
+            cmd.extend(["--include-directories", d])
+        cwd = str(self.project_dir) if self.project_dir else None
         result = subprocess.run(
-            ["gemini"] + file_args,
-            input=prompt,
+            cmd,
+            input=full_prompt,
             capture_output=True,
             text=True,
             timeout=600,
+            cwd=cwd,
         )
         if result.returncode != 0:
             raise RuntimeError(f"Gemini CLI failed: {result.stderr}")
